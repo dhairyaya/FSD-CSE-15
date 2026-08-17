@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo fetch</title>
+    <style>
+        table {
+            width: 80vw;
+            border-collapse: collapse;
+            margin: 20px auto;
+            font-family: Arial, sans-serif;
+        }
+        th, td {
+            border: 2px solid rgb(14, 14, 14);
+            text-align: center;
+            padding: 12px 8px; 
+        }
+        th {
+            background-color: #0ae55a;
+            font-weight: bold;
+        }
+        h1 {
+            text-align: center; 
+        }
+        .cart-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+        }
+        .cart-btn-plus, .cart-btn-minus {
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            border-radius: 4px;
+            min-width: 32px;
+        }
+        .cart-btn-plus { background-color: #4CAF50; }
+        .cart-btn-plus:hover { background-color: #439a46; }
+        .cart-btn-minus { background-color: #f44336; }
+        .cart-btn-minus:hover { background-color: #da382c; }
+
+        .qty-label {
+            font-weight: bold;
+            min-width: 20px;
+            display: inline-block;
+        }
+        .order-container {
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+  <h1>List of Products</h1>  
+  <table>
+    <thead>
+        <tr>
+          <th>Sr.No.</th>
+          <th>Title</th>
+          <th>Image</th>
+          <th>Category</th>
+          <th>Rating</th>
+          <th>Price</th>
+          <th>Stock</th>
+          <th>Add to Cart</th>
+        </tr>
+    </thead>
+    <tbody id="data">
+        <tr>
+            <td colspan="8" style="text-align: center;">Loading...</td>
+        </tr>
+    </tbody>
+  </table>
+  <div class="order-container">
+    <button class="place-order-btn" onclick="submitOrder()">Place Order</button>
+</div>
+</body>
+<script>
+    const URL = "https://dummyjson.com/products?limit=10&skip=3";
+    let INRrate = 0;
+    const cartState = {};
+
+    async function getRate() {
+        const rateURL = "https://open.er-api.com/v6/latest/USD";
+        try {
+            const res = await fetch(rateURL);
+            const ratedata = await res.json();
+            console.log("Fetched live INR rate:", ratedata.rates.INR);
+            return ratedata.rates.INR;
+        }
+        catch (err) {
+            console.error("Currency API Error, using fallback 1:", err);
+            return 84.00; 
+        }
+    } 
+
+    function addToCart(productId) {
+        if (cartState[productId] === undefined) {
+            cartState[productId] = 0;
+        }
+        cartState[productId] += 1;
+        updateQtyDisplay(productId);
+    }
+    
+    function removeFromCart(productId) {
+        if (cartState[productId] && cartState[productId] > 0) {
+            cartState[productId] -= 1;
+        }
+        updateQtyDisplay(productId);
+    }
+    
+    function updateQtyDisplay(productId) {
+        const qtyElement = document.getElementById(`qty-${productId}`);
+        if (qtyElement) {
+            qtyElement.textContent = cartState[productId] || 0;
+        }
+        console.log("Realtime Cart State:", cartState);
+    }
+
+    async function loadProduct() {
+        try {
+            const res = await fetch(URL);
+            console.log("Product response status:", res.status);
+            const data = await res.json();
+            console.log("Products Array:", data.products);
+            
+            let rows = "";
+            
+            data.products.forEach((i, index) => {
+                const finalInrPrice = i.price * INRrate;
+                cartState[i.id] = 0;
+                
+                rows += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${i.title}</td>
+                    <td><img src="${i.images[0]}" width="50px" height="50px" alt="${i.title}"/></td>
+                    <td>${i.category}</td>
+                    <td>${i.rating}</td>
+                    <td>₹${finalInrPrice.toFixed(2)}</td> 
+                    <td>${i.stock}</td>
+                    <td>
+                        <div class="cart-container">
+                            <button class="cart-btn-plus" onclick="addToCart(${i.id})">+</button>
+                            <span id="qty-${i.id}" class="qty-label">0</span>
+                            <button class="cart-btn-minus" onclick="removeFromCart(${i.id})">-</button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+            
+            const el = document.getElementById("data");
+            el.innerHTML = rows;
+        }
+        catch (err) {
+            console.error("Product Table Rendering Error:", err);
+            document.getElementById("data").innerHTML = `<tr><td colspan="8" style="color:red; text-align:center;">Error loading table rows.</td></tr>`;
+        }
+    }
+
+    async function initializeApp() {
+        INRrate = await getRate();
+        console.log("INRrate variable updated to:", INRrate);
+        await loadProduct();
+    }
+    
+    document.addEventListener("DOMContentLoaded", initializeApp);
+</script>
+</html>
