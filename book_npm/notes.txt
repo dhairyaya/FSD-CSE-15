@@ -1,0 +1,4 @@
+HMR ( Hot Module Replacement):   the new module changes are made automatically while changes are made to the module, without reseting the website
+
+Webpack:Webpack is a free and open-source static module bundler for modern JavaScript applications.When Webpack processes your application, it builds an internal dependency graph from one or more entry points,
+ combining every module your project needs into one or more optimized static bundles for browsers.
