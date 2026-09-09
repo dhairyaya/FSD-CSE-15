@@ -2,7 +2,7 @@
 const Footer = () => {
   return (
     <div className="footer">
-      <h3>Design and Developed By Ayush Sinha &copy;2026 </h3>
+      <h3>Design and Developed By Dhairya Pratap Solanki &copy;2026 </h3>
     </div>
   )
 }
